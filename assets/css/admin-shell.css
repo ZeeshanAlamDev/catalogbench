@@ -1,0 +1,25 @@
+/**
+ * CatalogBench — WordPress admin shell styles.
+ *
+ * Minimal CSS for the admin wrapper div that contains the Vue.js SPA.
+ * The Vue app provides its own comprehensive styling via the built CSS.
+ */
+
+.catalogbench-wrap {
+	margin: 0;
+	padding: 0;
+	max-width: 100%;
+}
+
+/* Remove default WP .wrap padding so the Vue app controls its own layout. */
+.catalogbench-wrap.wrap {
+	margin: 10px 20px 0 2px;
+}
+
+#catalogbench-app {
+	min-height: 80vh;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}

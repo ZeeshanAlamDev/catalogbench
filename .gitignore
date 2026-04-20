@@ -1,0 +1,25 @@
+# Dependency directories
+node_modules/
+vendor/
+
+# Environment files
+.env
+.env.local
+
+# Build output
+admin-ui/dist/
+!admin-ui/dist/catalogbench-admin.js
+!admin-ui/dist/catalogbench-admin.css
+!admin-ui/dist/assets/
+*.map
+
+# Editor and OS files
+.DS_Store
+.idea/
+.vscode/
+
+# WordPress plugin ignore (if zipping)
+temp/
+tests/
+
+*.md
