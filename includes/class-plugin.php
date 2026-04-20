@@ -48,6 +48,7 @@ class CatalogBench_Plugin {
 	 */
 	private function load_dependencies() {
 		require_once CATALOGBENCH_PLUGIN_DIR . 'includes/admin/class-admin.php';
+		require_once CATALOGBENCH_PLUGIN_DIR . 'includes/admin/class-ajax.php';
 	}
 
 	/**
@@ -58,6 +59,9 @@ class CatalogBench_Plugin {
 	private function register_hooks() {
 		$admin = new CatalogBench_Admin();
 		$admin->register_hooks();
+
+		$ajax = new CatalogBench_Ajax();
+		$ajax->register_hooks();
 
 		add_action( 'init', array( $this, 'load_textdomain' ) );
 	}
