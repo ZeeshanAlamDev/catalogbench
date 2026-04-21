@@ -28,7 +28,7 @@ class CatalogBench_Activator {
 			$defaults = array(
 				'gemini_key'       => '',
 				'openai_key'       => '',
-				'openai_model'     => 'gpt-4o-mini',
+				'openai_model'     => 'gpt-5.4-mini',
 				'default_provider' => 'gemini',
 				'default_tone'     => 'professional',
 				'batch_size'       => 5,

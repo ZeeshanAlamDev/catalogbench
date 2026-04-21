@@ -1,5 +1,4 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import DashboardPage from './pages/DashboardPage.vue'
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -7,7 +6,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'dashboard',
-      component: DashboardPage
+      component: () => import('./pages/DashboardPage.vue')
     },
     {
       path: '/single-generator',

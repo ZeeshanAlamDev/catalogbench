@@ -36,7 +36,7 @@ class CatalogBench_Ajax {
 	 * Verify standard nonces and permissions.
 	 */
 	private function check_permissions() {
-		check_ajax_referer( 'catalogbench_admin_nonce', 'nonce' );
+		check_ajax_referer( 'catalogbench_nonce', '_ajax_nonce' );
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'catalogbench' ) ), 403 );
 		}
@@ -48,29 +48,28 @@ class CatalogBench_Ajax {
 	public function save_settings() {
 		$this->check_permissions();
 
-		$payload  = json_decode( trim( file_get_contents( 'php://input' ) ), true );
 		$settings = get_option( 'catalogbench_settings', array() );
 
-		if ( ! empty( $payload['gemini_key'] ) ) {
+		if ( ! empty( $_POST['gemini_key'] ) ) {
 			require_once CATALOGBENCH_PLUGIN_DIR . 'includes/utils/class-encryption.php';
-			$settings['gemini_key'] = CatalogBench_Encryption::encrypt( sanitize_text_field( $payload['gemini_key'] ) );
+			$settings['gemini_key'] = CatalogBench_Encryption::encrypt( sanitize_text_field( wp_unslash( $_POST['gemini_key'] ) ) );
 		}
 
-		if ( ! empty( $payload['openai_key'] ) ) {
+		if ( ! empty( $_POST['openai_key'] ) ) {
 			require_once CATALOGBENCH_PLUGIN_DIR . 'includes/utils/class-encryption.php';
-			$settings['openai_key'] = CatalogBench_Encryption::encrypt( sanitize_text_field( $payload['openai_key'] ) );
+			$settings['openai_key'] = CatalogBench_Encryption::encrypt( sanitize_text_field( wp_unslash( $_POST['openai_key'] ) ) );
 		}
 
-		if ( ! empty( $payload['openai_model'] ) ) {
-			$settings['openai_model'] = sanitize_text_field( $payload['openai_model'] );
+		if ( ! empty( $_POST['openai_model'] ) ) {
+			$settings['openai_model'] = sanitize_text_field( wp_unslash( $_POST['openai_model'] ) );
 		}
 
-		if ( ! empty( $payload['gemini_model'] ) ) {
-			$settings['gemini_model'] = sanitize_text_field( $payload['gemini_model'] );
+		if ( ! empty( $_POST['gemini_model'] ) ) {
+			$settings['gemini_model'] = sanitize_text_field( wp_unslash( $_POST['gemini_model'] ) );
 		}
 
-		if ( ! empty( $payload['selected_provider'] ) ) {
-			$settings['selected_provider'] = sanitize_text_field( $payload['selected_provider'] );
+		if ( ! empty( $_POST['selected_provider'] ) ) {
+			$settings['selected_provider'] = sanitize_text_field( wp_unslash( $_POST['selected_provider'] ) );
 		}
 
 		update_option( 'catalogbench_settings', $settings );
@@ -137,13 +136,11 @@ class CatalogBench_Ajax {
 	 */
 	public function generate_single() {
 		$this->check_permissions();
-		
-		$payload = json_decode( trim( file_get_contents( 'php://input' ) ), true );
 
-		$product_id   = isset( $payload['product_id'] ) ? absint( $payload['product_id'] ) : 0;
-		$content_type = isset( $payload['content_type'] ) ? sanitize_text_field( $payload['content_type'] ) : 'description';
-		$tone         = isset( $payload['tone'] ) ? sanitize_text_field( $payload['tone'] ) : 'Professional';
-		$custom_instr = isset( $payload['custom_instructions'] ) ? sanitize_textarea_field( $payload['custom_instructions'] ) : '';
+		$product_id   = isset( $_POST['product_id'] ) ? absint( $_POST['product_id'] ) : 0;
+		$content_type = isset( $_POST['content_type'] ) ? sanitize_text_field( wp_unslash( $_POST['content_type'] ) ) : 'description';
+		$tone         = isset( $_POST['tone'] ) ? sanitize_text_field( wp_unslash( $_POST['tone'] ) ) : 'Professional';
+		$custom_instr = isset( $_POST['custom_instruction'] ) ? sanitize_textarea_field( wp_unslash( $_POST['custom_instruction'] ) ) : '';
 
 		if ( 0 === $product_id ) {
 			wp_send_json_error( array( 'message' => __( 'Invalid Product ID.', 'catalogbench' ) ) );
@@ -200,12 +197,10 @@ class CatalogBench_Ajax {
 	 */
 	public function apply_single() {
 		$this->check_permissions();
-		
-		$payload = json_decode( trim( file_get_contents( 'php://input' ) ), true );
 
-		$product_id   = isset( $payload['product_id'] ) ? absint( $payload['product_id'] ) : 0;
-		$content_type = isset( $payload['content_type'] ) ? sanitize_text_field( $payload['content_type'] ) : '';
-		$content      = isset( $payload['content'] ) ? wp_kses_post( $payload['content'] ) : '';
+		$product_id   = isset( $_POST['product_id'] ) ? absint( $_POST['product_id'] ) : 0;
+		$content_type = isset( $_POST['content_type'] ) ? sanitize_text_field( wp_unslash( $_POST['content_type'] ) ) : '';
+		$content      = isset( $_POST['content'] ) ? wp_kses_post( wp_unslash( $_POST['content'] ) ) : '';
 
 		if ( 0 === $product_id || empty( $content_type ) ) {
 			wp_send_json_error( array( 'message' => __( 'Invalid Product ID or Content Type.', 'catalogbench' ) ) );
@@ -302,6 +297,10 @@ class CatalogBench_Ajax {
 			'paginate' => true,
 		);
 
+		if ( ! empty( $search ) ) {
+			$args['s'] = $search;
+		}
+
 		if ( ! empty( $category ) ) {
 			$args['category'] = array( $category );
 		}
@@ -310,14 +309,6 @@ class CatalogBench_Ajax {
 
 		$products = array();
 		foreach ( $products_result->products as $product ) {
-			$name = strtolower( $product->get_name() );
-			$sku  = strtolower( $product->get_sku() );
-			$src  = strtolower( $search );
-			
-			if ( ! empty( $src ) && strpos( $name, $src ) === false && strpos( $sku, $src ) === false ) {
-				continue;
-			}
-
 			$products[] = array(
 				'id'        => $product->get_id(),
 				'name'      => $product->get_name(),
@@ -340,12 +331,25 @@ class CatalogBench_Ajax {
 	public function start_bulk_job() {
 		$this->check_permissions();
 
-		$payload = json_decode( trim( file_get_contents( 'php://input' ) ), true );
-		$product_ids = isset( $payload['product_ids'] ) ? array_map( 'absint', $payload['product_ids'] ) : array();
-		$config      = isset( $payload['config'] ) ? $payload['config'] : array();
+		$raw_ids = isset( $_POST['product_ids'] ) ? $_POST['product_ids'] : '';
+		if ( is_string( $raw_ids ) ) {
+			$raw_ids = json_decode( wp_unslash( $raw_ids ), true );
+		}
+		$product_ids = is_array( $raw_ids ) ? array_map( 'absint', $raw_ids ) : array();
+
+		$raw_config = isset( $_POST['config'] ) ? $_POST['config'] : '';
+		if ( is_string( $raw_config ) ) {
+			$raw_config = json_decode( wp_unslash( $raw_config ), true );
+		}
+		$config = is_array( $raw_config ) ? $raw_config : array();
 
 		if ( empty( $product_ids ) || empty( $config ) ) {
 			wp_send_json_error( array( 'message' => __( 'Missing products or configuration.', 'catalogbench' ) ) );
+		}
+
+		// Enforce documented 500-product limit.
+		if ( count( $product_ids ) > 500 ) {
+			wp_send_json_error( array( 'message' => __( 'Maximum 500 products per bulk job.', 'catalogbench' ) ) );
 		}
 
 		$job_id = CatalogBench_Bulk_Processor::start_job( $product_ids, $config );

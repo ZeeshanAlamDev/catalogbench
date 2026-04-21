@@ -83,14 +83,18 @@ class CatalogBench_Admin {
 			CATALOGBENCH_VERSION
 		);
 
-		// Vue.js built CSS.
-		if ( file_exists( $dist_path . 'catalogbench-admin.css' ) ) {
-			wp_enqueue_style(
-				'catalogbench-admin',
-				$dist_url . 'catalogbench-admin.css',
-				array( 'catalogbench-admin-shell' ),
-				CATALOGBENCH_VERSION
-			);
+		// Vue.js built CSS — enqueue all CSS chunks from the dist folder.
+		$css_files = glob( $dist_path . '*.css' );
+		if ( $css_files ) {
+			foreach ( $css_files as $index => $css_file ) {
+				$handle = 'catalogbench-admin' . ( $index > 0 ? '-' . $index : '' );
+				wp_enqueue_style(
+					$handle,
+					$dist_url . basename( $css_file ),
+					$index === 0 ? array( 'catalogbench-admin-shell' ) : array(),
+					CATALOGBENCH_VERSION
+				);
+			}
 		}
 
 		// Vue.js built JS.

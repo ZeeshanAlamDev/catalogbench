@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
 import wpAjax from '../api/ajax';
 
 const loading = ref(false);
@@ -123,6 +123,12 @@ const resetJob = () => {
 
 onMounted(() => {
   loadProducts();
+});
+
+onUnmounted(() => {
+  if (pollingInterval.value) {
+    clearInterval(pollingInterval.value);
+  }
 });
 
 </script>

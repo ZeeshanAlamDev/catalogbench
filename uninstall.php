@@ -20,16 +20,14 @@ delete_option( 'catalogbench_version' );
 global $wpdb;
 $wpdb->query(
 	$wpdb->prepare(
-		"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
-		$wpdb->esc_like( '_transient_cb_preview_' ) . '%',
-		$wpdb->esc_like( '_transient_cb_bulk_' ) . '%'
+		"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+		$wpdb->esc_like( '_transient_cb_job_' ) . '%'
 	)
 );
 $wpdb->query(
 	$wpdb->prepare(
-		"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
-		$wpdb->esc_like( '_transient_timeout_cb_preview_' ) . '%',
-		$wpdb->esc_like( '_transient_timeout_cb_bulk_' ) . '%'
+		"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+		$wpdb->esc_like( '_transient_timeout_cb_job_' ) . '%'
 	)
 );
 
