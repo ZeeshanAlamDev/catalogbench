@@ -30,6 +30,7 @@ class CatalogBench_Ajax {
 		add_action( 'wp_ajax_catalogbench_get_products', array( $this, 'get_products' ) );
 		add_action( 'wp_ajax_catalogbench_start_bulk_job', array( $this, 'start_bulk_job' ) );
 		add_action( 'wp_ajax_catalogbench_get_bulk_status', array( $this, 'get_bulk_status' ) );
+		add_action( 'wp_ajax_catalogbench_get_dashboard_stats', array( $this, 'get_dashboard_stats' ) );
 	}
 
 	/**
@@ -72,6 +73,30 @@ class CatalogBench_Ajax {
 			$settings['selected_provider'] = sanitize_text_field( wp_unslash( $_POST['selected_provider'] ) );
 		}
 
+		if ( isset( $_POST['default_tone'] ) ) {
+			$settings['default_tone'] = sanitize_text_field( wp_unslash( $_POST['default_tone'] ) );
+		}
+
+		if ( isset( $_POST['batch_size'] ) ) {
+			$settings['batch_size'] = absint( $_POST['batch_size'] );
+		}
+
+		if ( isset( $_POST['batch_delay'] ) ) {
+			$settings['batch_delay'] = absint( $_POST['batch_delay'] );
+		}
+
+		if ( isset( $_POST['seo_sync'] ) ) {
+			$settings['seo_sync'] = rest_sanitize_boolean( wp_unslash( $_POST['seo_sync'] ) );
+		}
+
+		if ( isset( $_POST['prompt_template'] ) ) {
+			$settings['prompt_template'] = sanitize_textarea_field( wp_unslash( $_POST['prompt_template'] ) );
+		}
+
+		if ( isset( $_POST['max_length'] ) && is_array( $_POST['max_length'] ) ) {
+			$settings['max_length'] = array_map( 'absint', $_POST['max_length'] );
+		}
+
 		update_option( 'catalogbench_settings', $settings );
 
 		wp_send_json_success( array( 'message' => __( 'Settings saved successfully.', 'catalogbench' ) ) );
@@ -92,7 +117,18 @@ class CatalogBench_Ajax {
 			'openai_key'        => ! empty( $settings['openai_key'] ) ? CatalogBench_Encryption::decrypt( $settings['openai_key'] ) : '',
 			'openai_model'      => ! empty( $settings['openai_model'] ) ? $settings['openai_model'] : 'gpt-5.4-mini',
 			'gemini_model'      => ! empty( $settings['gemini_model'] ) ? $settings['gemini_model'] : 'gemini-2.0-flash',
-			'selected_provider' => ! empty( $settings['selected_provider'] ) ? $settings['selected_provider'] : 'gemini',
+			'selected_provider' => ! empty( $settings['selected_provider'] ) ? $settings['selected_provider'] : ( ! empty( $settings['default_provider'] ) ? $settings['default_provider'] : 'gemini' ),
+			'default_tone'      => ! empty( $settings['default_tone'] ) ? $settings['default_tone'] : 'professional',
+			'batch_size'        => isset( $settings['batch_size'] ) ? absint( $settings['batch_size'] ) : 5,
+			'batch_delay'       => isset( $settings['batch_delay'] ) ? absint( $settings['batch_delay'] ) : 2,
+			'seo_sync'          => isset( $settings['seo_sync'] ) ? (bool) $settings['seo_sync'] : true,
+			'prompt_template'   => isset( $settings['prompt_template'] ) ? $settings['prompt_template'] : '',
+			'max_length'        => isset( $settings['max_length'] ) ? $settings['max_length'] : array(
+				'description'       => 300,
+				'short_description' => 60,
+				'seo_title'         => 60,
+				'seo_meta'          => 160,
+			),
 		);
 
 		wp_send_json_success( $response );
@@ -236,6 +272,9 @@ class CatalogBench_Ajax {
 				$product->save();
 			}
 
+			// Track optimization
+			update_post_meta( $product_id, '_catalogbench_optimized', time() );
+
 			wp_send_json_success( array( 'message' => __( 'Product updated successfully.', 'catalogbench' ) ) );
 		} catch ( Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
@@ -373,5 +412,28 @@ class CatalogBench_Ajax {
 		}
 
 		wp_send_json_success( $status );
+	}
+
+	/**
+	 * Returns overview numbers for the dashboard page.
+	 */
+	public function get_dashboard_stats() {
+		$this->check_permissions();
+
+		global $wpdb;
+
+		$total_products = wp_count_posts( 'product' );
+		$published_count = isset( $total_products->publish ) ? $total_products->publish : 0;
+
+		$optimized_count = $wpdb->get_var( "
+			SELECT COUNT(DISTINCT post_id) 
+			FROM {$wpdb->postmeta} 
+			WHERE meta_key = '_catalogbench_optimized'
+		" );
+
+		wp_send_json_success( array(
+			'total_products'  => (int) $published_count,
+			'optimized_count' => (int) $optimized_count,
+		) );
 	}
 }

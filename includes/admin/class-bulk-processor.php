@@ -110,15 +110,19 @@ class CatalogBench_Bulk_Processor {
 					if ( 'description' === $type ) {
 						$product->set_description( wp_kses_post( $result ) );
 						$product->save();
+						update_post_meta( $product_id, '_catalogbench_optimized', time() );
 					} elseif ( 'short_description' === $type ) {
 						$product->set_short_description( wp_kses_post( $result ) );
 						$product->save();
+						update_post_meta( $product_id, '_catalogbench_optimized', time() );
 					} elseif ( 'seo_title' === $type ) {
 						update_post_meta( $product_id, '_yoast_wpseo_title', sanitize_text_field( $result ) );
 						update_post_meta( $product_id, 'rank_math_title', sanitize_text_field( $result ) );
+						update_post_meta( $product_id, '_catalogbench_optimized', time() );
 					} elseif ( 'seo_meta' === $type ) {
 						update_post_meta( $product_id, '_yoast_wpseo_metadesc', sanitize_text_field( $result ) );
 						update_post_meta( $product_id, 'rank_math_description', sanitize_text_field( $result ) );
+						update_post_meta( $product_id, '_catalogbench_optimized', time() );
 					}
 				} catch ( Exception $e ) {
 					$job_data['errors']++;

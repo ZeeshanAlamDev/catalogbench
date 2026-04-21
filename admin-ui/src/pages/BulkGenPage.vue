@@ -13,6 +13,7 @@ const page = ref(1);
 const search = ref('');
 const selectedIds = ref([]);
 const selectAll = ref(false);
+const emptyOnly = ref(false);
 
 const jobStatus = ref(null); // Will hold the transient response
 
@@ -44,9 +45,20 @@ const loadProducts = async () => {
 
 const toggleSelectAll = () => {
   if (selectAll.value) {
-    selectedIds.value = products.value.map(p => p.id);
+    if (emptyOnly.value) {
+      selectedIds.value = products.value.filter(p => !p.has_desc).map(p => p.id);
+    } else {
+      selectedIds.value = products.value.map(p => p.id);
+    }
   } else {
     selectedIds.value = [];
+  }
+};
+
+const toggleEmptyOnly = () => {
+  if (selectAll.value) {
+    // Re-run select all logic to filter out the ones with description
+    toggleSelectAll();
   }
 };
 
@@ -168,6 +180,10 @@ onUnmounted(() => {
         <div class="cb-card filters-card">
           <input type="text" v-model="search" placeholder="Search by name or SKU..." class="cb-input" @keyup.enter="loadProducts" />
           <button class="cb-btn cb-btn-secondary" @click="loadProducts">Search</button>
+          <label class="cb-filter-toggle" style="margin-left:12px; font-size:14px; display:inline-flex; align-items:center; gap:6px;">
+            <input type="checkbox" v-model="emptyOnly" @change="toggleEmptyOnly" />
+            Only select products with empty descriptions
+          </label>
         </div>
 
         <div class="cb-card table-card">
